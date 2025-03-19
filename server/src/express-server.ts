@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import morgan from "morgan";
+
 import connectDB from "../config/db";
 
 import userRoutes from "./routes/user";
@@ -24,7 +26,7 @@ app.use((req, res, next) => {
     express.json()(req, res, next); // Apply express.json() to other routes
   }
 });
-
+app.use(morgan("combined"));
 app.use(clerkMiddleware());
 
 // Database connection

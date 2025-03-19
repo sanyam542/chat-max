@@ -88,28 +88,9 @@ const Chats = ({ item }: any) => {
     </TouchableOpacity>
   );
 };
-const Users = ({ item }: any) => {
-  return (
-    <TouchableOpacity
-      style={styles.messageContainer}
-      onPress={() =>
-        router.push(
-          `/chat/${item.chatId ? item.chatId : 0}?participantId=${item._id}`
-        )
-      }
-    >
-      <Image source={item.imageUrl} style={styles.avatar} />
-      <View style={styles.messageContent}>
-        <Text style={styles.userName}>{item.username}</Text>
-        <Text style={styles.messageText}>{item.message}</Text>
-      </View>
-      <Text style={styles.timeText}>{item.time}</Text>
-    </TouchableOpacity>
-  );
-};
 
 const HomeScreen = () => {
-  const [users, setUsers] = useState([]);
+  // const [users, setUsers] = useState([]);
   const [chats, setChats] = useState([]);
 
   const { getToken } = useAuth();
@@ -117,18 +98,13 @@ const HomeScreen = () => {
   useEffect(() => {
     const fetch = async () => {
       const token = (await getToken()) as string;
-      setUsers(await getUsers(token));
+
       setChats(await getChats(token));
     };
     fetch();
   }, []);
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={users}
-        renderItem={({ item }) => <Users item={item} />}
-        keyExtractor={(item: any) => item.id}
-      />
       <FlatList
         data={chats}
         renderItem={({ item }) => <Chats item={item} />}
@@ -138,7 +114,7 @@ const HomeScreen = () => {
         onPress={() => {
           const fetch = async () => {
             const token = (await getToken()) as string;
-            setUsers(await getUsers(token));
+            // setUsers(await getUsers(token));
             setChats(await getChats(token));
           };
           fetch();

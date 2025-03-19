@@ -1,9 +1,13 @@
-import { createChat, getMessages, sendMessage } from "@/utils/apiCalls";
+import { createChat, getMessages } from "@/utils/apiCalls";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import axios from "axios";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
 import React, { useEffect, useState } from "react";
+import io from "socket.io-client";
+
+const socket = io(process.env.EXPO_PUBLIC_SOCKET_SERVER_PORT); // Replace with your Socket.IO server URL
+
 import {
   View,
   Text,
@@ -12,13 +16,21 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+// type Message = {
+//   id: string;
+//   text: string;
+//   time: string;
+//   isMe: boolean;
+//   delivered?: boolean;
+//   date?: string;
+// };
+
 type Message = {
-  id: string;
+  chatId: string;
+  senderId: string;
   text: string;
-  time: string;
-  isMe: boolean;
-  delivered?: boolean;
-  date?: string;
+  timestamp: string;
+  _id: string;
 };
 
 // const messages: Message[] = [
@@ -141,11 +153,47 @@ const ChatScreen: React.FC = () => {
   console.log(id, participantId, "this re bachu");
   const [text, setText] = useState<string>("");
   const [chatId, setChatId] = useState<string>("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      chatId: "",
+      senderId: "",
+      text: "",
+      timestamp: "",
+      _id: "",
+    },
+  ]);
 
   const { getToken } = useAuth();
   const { user } = useUser();
   const userId = user?.publicMetadata.userId as string;
+
+  // Listen for incoming messages
+  useEffect(() => {
+    socket.on("receive_message", (data: Message) => {
+      setMessages((prevMessages: Message[]) => {
+        console.log(prevMessages);
+        return [...prevMessages, data];
+      });
+      console.log("client done", data);
+    });
+
+    // Clean up the event listener
+    return () => {
+      socket.off("receive_message");
+    };
+  }, []);
+
+  // Send a message
+  const sendMessage = () => {
+    if (text.trim()) {
+      socket.emit("send_message", {
+        chatId,
+        senderId: userId, // Replace with the actual sender ID
+        text,
+      });
+      setText("");
+    }
+  };
 
   useEffect(() => {
     if (chatId) {
@@ -220,9 +268,11 @@ const ChatScreen: React.FC = () => {
 
               const chat = await createChat("username", [participantId], token);
               setChatId(chat._id);
-              await sendMessage(text, chat._id, token);
+              // await sendMessage(text, chat._id, token);
+              sendMessage();
             } else {
-              await sendMessage(text, chatId, token);
+              // await sendMessage(text, chatId, token);
+              sendMessage();
             }
           }}
         >
